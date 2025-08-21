@@ -20,7 +20,7 @@ meal_logs
 
 recipe_categories
 
-📊 Table Structures & Purpose
+## 📊 Table Structures & Purpose
 
 1. inventory
 
@@ -108,17 +108,17 @@ created_at (timestamp)
 
 Notes: Used to organize recipes into logical groups (e.g., Sauce, Main Dish).
 
-🔄 Table Relationships
+## 🔄 Table Relationships
 
 inventory (ingredient)
-     ▲
-     │ ingredient_id
+▲
+│ ingredient_id
 recipe_ingredients (link table)
-     │ recipe_id
-     ▼
+│ recipe_id
+▼
 recipes
-     │
-     ▼
+│
+▼
 recipe_categories
 
 recipe_ingredients links:
@@ -129,7 +129,7 @@ ingredient_id → an item from inventory
 
 and adds quantity_per_batch and unit
 
-🔐 Row-Level Security (RLS) Summary
+## 🔐 Row-Level Security (RLS) Summary
 
 inventory
 
@@ -171,7 +171,7 @@ user_id field is present in meal_logs, ready for secure user-level tracking
 
 Future plan: add auth.uid()-based INSERT and UPDATE policies
 
-📌 Recommendations
+## 📌 Recommendations
 
 🔐 Add INSERT/UPDATE RLS to meal_logs
 
