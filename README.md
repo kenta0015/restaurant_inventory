@@ -1,270 +1,214 @@
-## 🍽️ Restaurant Inventory Bolt
+# 🍽️ Restaurant Inventory Bolt
 
-A mobile-first inventory management app designed for small restaurants, food trucks, and prep-heavy kitchens.Built for speed, simplicity, and smart, suggestion-based planning, this app helps staff track ingredients, manage recipes, log prep activities, and keep inventory in sync — with minimal manual input.
+A mobile‑first inventory & prep management app for small restaurants, food trucks, and prep‑heavy kitchens.  
+Designed for **speed**, **simplicity**, and **HITL (human‑in‑the‑loop)** accuracy.
 
-Built with React Native + Expo Router, styled for clarity, and designed for easy tracking of stock levels without worrying about expiry dates.
+_Last updated: 2025-08-21_
 
-## ✅ Stable Version Setup (as of June 2025)
+---
 
-Package Version Notes
-expo 52.0.46 SDK 52 (current) ✅
-react-native 0.76.9 Matches SDK 52 ✅
-react 18.2.0 ✅ Recommended (not 18.3.1)
-react-dom 18.2.0 For web compatibility ✅
-expo-router 4.0.21 ✅ Works with SDK 52
-@react-native-picker/picker 2.9.0 ✅ Compatible
+## 🧠 Smart Invoice OCR (I‑1, Core)
 
-**【OCR command】** cd api-server 　
-npx tsx server.ts
+**Goal:** Move from photo → OCR → extracted items → human review → inventory registration, with **speed** (≤10s/invoice), **accuracy**, and **low cost** (send ≤30% of lines to GPT).
 
-## ⚠️ Important Notes
-
-react@18.3.1 is not fully compatible yet — use 18.2.0.
-
-expo-router@5.x requires Expo SDK 53+. Use 4.x for SDK 52.
-
-After changes, always run:
-
-```bash
-
-Remove-Item -Recurse -Force node_modules
-del package-lock.json
-npm install
-npx expo start --clear
+**Pipeline**
 
 ```
+Upload → /ocr (Vision) → rawText, blocks
+  └─ Pre‑filters: joinVerticalLines / clean / isLikelyItemLine / groupBlocks
+  └─ /ocr/gpt-parse: rules‑first → low‑confidence lines only GPT (batch + backoff)
+Normalize → UI review (HITL) → saveParsedItems (upsert) → Registration summary
+```
 
-## 📦 Project Structure
+**Normalization & Policy**
 
-restaurant_inventory_bolt-main/
-├── app/ # Screens and routing
-├── assets/ # App icons and images
-├── components/ # Reusable UI components (InventoryItem, PrepTaskItem, etc.)
-├── data/ # Dummy data for inventory, recipes, and tasks
-├── hooks/ # Custom React hooks
-├── types/ # TypeScript types
-├── utils/ # Utility functions
-├── .bolt/ # Bolt build system configs
-├── package.json # Project settings and dependencies
-├── tsconfig.json # TypeScript settings
-└── README.md # Project overview (you are here)
+- `inventory.name` is **stored & matched in lowercase** (display can keep original casing).
+- `unit` normalized via dictionary (`kg/g/l/ml/pc/pcs...`).
+- Missing required fields (e.g., name, unit) are **⚠️ skipped** and shown in the results list.
 
-## 🗌 Key Features
+**Registration UI**
 
-### 📟 Track Ingredients
+- Summary: ✅ success / ⚠️ skipped / ❌ error
+- Per‑row detail with messages
+- **Retry** button for ❌ rows only
 
-View, add, and update stock in real time
+**Learning (Step E)**
 
-### 🍱 Prep-Based Inventory Logic
+- `ocr_training_data`: `{ input_block, rule_result, gpt_result, user_final, feedback_label }`
+- `invoice_runs`: per‑upload summary (success/skipped/failed)
 
-Materials are deducted automatically based on prep quantity
+---
 
-### 📊 Prep-Sheet Mode
+## 🛎 Alert Threshold Editing (I‑3)
 
-Suggest daily prep quantity based on past trends (weekday/weekend-based average)
+- Edit `alertLevel` inline on each inventory row; save to Supabase on blur.
+- Low‑stock: recalc `isLow = stock < (alertLevel ?? defaultThreshold)` immediately.
+- No schema change required (uses existing `inventory.alertLevel`).
 
-### ⚠️ Smart Alerts
+---
 
-Combined low stock and physical check warnings
+## ⏱ Prep Sheet Estimated Time (I‑2)
 
-### 🧠 Suggestion-Based System
+- Recommended schema: `recipes.estimated_time_minutes int`  
+  (aligns with `types.ts` → `estimatedTime: number`).
+- UI: tap to inline‑edit, save, and recalc total prep time.
 
-Offers prep quantity estimates, but leaves control in staff hands
+Migration:
 
-### ✍️ Manual Adjustments
+```sql
+alter table recipes add column if not exists estimated_time_minutes int;
+```
 
-Override prep suggestions as needed
+---
 
-### 📌 Prep Sheet Interface
+## 📊 POS Analysis (I‑4)
 
-Shows required amounts per ingredient per day, allows toggling "completed" state and quantity edits, then updates inventory with one tap
+- Screen: `app/(tabs)/analysis.tsx`
+- CSV import: `components/POSUploadModal.tsx` + `utils/parsePOSCSV.ts`
+- Analytics: `utils/posAnalysisUtils.ts`
+  - Sales summary / weekday trend / prep suggestions / ingredient needs
+- Optional timing: `utils/posTimingUtils.ts` (seated → order delay)
 
-### 📲 Fast & Simple Input
+CSV (minimal):
 
-Dropdowns, quick-add chips, and smart defaults
+```
+Date,Item Name,Quantity Sold,Table ID,Order Time[,Seated Time]
+2025-06-01,Tomato Pasta,12,T8,18:47
+2025-06-01,Garlic Bread,7,T4,18:49
+```
 
-📱 Designed for Real Kitchens
-✅ Large buttons and color-coded warnings
-✅ Minimal, mobile-first UI with tab navigation
-✅ Fast interactions, minimal typing
-✅ Templates for common recipes and prep sets
+---
 
-## 🧾 OCR-Driven Inventory Setup
+## 📱 iOS (I‑5)
 
-📷 Invoice Image Upload
-Upload photos of supplier invoices to detect ingredients and quantities automatically using OCR (Tesseract.js)
+- Prereq: I‑1 stable (camera → OCR → registration end‑to‑end).
+- Build & ship with EAS → TestFlight.
+- Ensure camera/photos permissions and env configuration.
 
-## 🧠 AI-Based Name Correction
+---
 
-Smart fuzzy matching (via Fuse.js) corrects minor OCR spelling errors like "Garie" → "Garlic"
+## ⚠️ Known Issues / Notes
 
-## 🧹 Line Cleaning & Error Tolerance
+- `Alert.alert` may not render like native on Web; use toast/`console.warn` as fallback.
+- After dependency changes, follow the cache‑clear steps above.
+- OCR/GPT cost is controlled by `costGuard`; 429/5xx are retried with exponential backoff.
 
-Fixes common OCR issues like "0nion" → "onion", and parses decimal formats like 1,5 kg
+---
 
-## ✅ Automatic Stock Update
+## 📄 Docs
 
-Ingredients from invoices are matched to inventory (or created if missing), with quantities added instantly
+- Roadmap: [plan.md](./plan.md)
 
-## 🔍 Preview + Scan Feedback
+---
 
-Invoice preview, parsed OCR text, and confirmation toast (e.g., "✅ 3 items updated") after each upload
+## 🛠 Technologies
 
-## 🖼 Image Preview
+Expo (SDK 52), React Native 0.76, Expo Router 4.x, TypeScript 5, Lucide Icons, date‑fns
 
-See the uploaded invoice image before and after scanning for transparency and verification
-
-### 🧠 Prep Sheet Quantity Logic
-
-The system operates in a hybrid mode combining automation with manual control.
-
-| Field                 | Meaning                                                                   |
-| --------------------- | ------------------------------------------------------------------------- |
-| `quantity`            | Auto-generated suggested prep quantity from `prep_suggestions`            |
-| `currentMealStock`    | Existing prepped stock for today                                          |
-| `Planned Prep`        | Default = `quantity - currentMealStock`                                   |
-| `plannedPrepOverride` | Staff override input (from modal)                                         |
-| `Done` action         | Logs `plannedPrepOverride` if provided, otherwise uses `quantity - stock` |
-
-## ➡️ **Display always shows system's suggestion**, but [✅ Done] respects staff input.
-
-This app uses a "complete deletion + manual override" strategy for meal logs:
-
-When a user manually enters the current stock of a prepared meal (e.g. "4 batches of tomato sauce remain"), the system:
-
-Deletes all existing meal logs for that recipe
-
-Inserts a single new log with the manually entered quantity
-
-Adjusts inventory based on the difference (delta) between the old and new total
-
-This ensures that the meal log reflects the actual physical stock, even after long breaks (e.g., holidays).
-
-## 🔄 Impact on Forecasting
-
-Although the system currently uses weekday/weekend suggestions set by the user, future versions may:
-
-Use historical logs (past 3 weeks) to automatically forecast prep suggestions
-
-Filter out override entries by checking notes = 'Manual override'
-
-This hybrid design balances automation and manual control with clarity and traceability.
-
-## Inventory Logic
-
-📄 [Detailed Inventory Logic](./docs/inventory_logic.md)
-
-##Superbase Summary
-[See Supabase summary ](./SUPABASE_SUMMARY.md)
-
-## 📊 Prep-Sheet Mode
-
-Automatically suggests what to prepare each day using:
-
-Past weekday-based average meals
-
-Prep targets (e.g., “5 miso mayo bottles”)
-
-Ingredient requirements per recipe
-
-Current inventory comparison
-
-💡 Example:“⚠️ Not enough miso to prepare 3 more bottles of miso mayo”
-
-## ⚠️ Smart Alerts System
-
-System automation isn’t perfect — this feature helps avoid surprises.
-⚠️ Alert.alert() in the meal may not display on web (Expo Web or browser), but it works correctly(?? suspicious) on native devices (iOS/Android). Use console.warn() or a toast library for web fallback if needed.
-
-## ♻️ Combines: Low Stock + Unverified Manual Check
-
-## 🕒 checkThreshold: Warn if stock < X or last checked over Y days ago
-
-## 👁️ Visual cues only → never blocks flow
-
-## 📋 Recipe and Inventory Data Management
-
-✅ In-App CSV Import for Recipes and Ingredients
-Users can now upload .csv files directly from the app.
-
-The uploader supports previewing and mapping of recipe names, categories, ingredients, and "how to cook" instructions.
-
-Parsed data is automatically inserted into the Supabase recipes and ingredients tables.
-
-This feature eliminates the need to use the Supabase dashboard for initial data setup.
-
-✅ OCR-Based Invoice Capture (Implemented with Tesseract.js)
-A working in-app invoice scanner reads text from supplier invoices via uploaded images.
-
-Parsed data appears in a preview and can be adjusted before submission.
-
-Supports dynamic ingredient entry and category assignment during the OCR flow.
-
-✅ Manual Entry and Editing
-Ingredients and recipes can still be added or edited manually.
-
-Category dropdown with "+ New" option allows for dynamic category creation.
-
-All changes sync directly with Supabase.
-
-## 📦 Invoice Management (Now - Mixed Approach)
-
-Paper, PDF, and CSV invoices are supported.
-
-OCR-based scanning has been implemented for image-based invoices.
-
-Manual verification is still required to ensure accuracy before updating stock.
-
-### 🔍 Optional Enhancements:
-
-"Restock Last" Shortcut: One-tap refilling for commonly restocked ingredients.
-
-Supplier Mapping: Link ingredients to suppliers for more accurate invoice parsing and order planning.
-
-## 🏁 Key PhilosophyAutomate what can be automated. Simplify what must stay manual. Always prioritize speed and accuracy for kitchen operations.
-
-## 🛠️ Technologies Used
-
-Expo (SDK 52)
-
-React Native (0.76)
-
-Expo Router (4.0)
-
-TypeScript (5.3)
-
-Lucide React Native Icons
-
-date-fns for date formatting
-
-## 🧹 Cleaned Up (Recently Updated)
-
-Removed all expiry date alerts.
-
-Focus is now only on quantity management and low stock alerts.
-
-Fully cleaned merge conflicts and improved codebase stability.
-
-Updated and modernized Expo + dependencies.
-
-Removed all @/ aliases and replaced them with relative imports for compatibility with Expo Web bundler
-
-Fixed white screen issues in Expo Web by aligning paths and bundler expectations
-
-## 📌 Notes
-
-This app currently runs entirely with dummy data stored in /data/dummyData.ts.
-
-Future versions can easily connect to a real backend (Firebase, Supabase, etc.)
-
-Designed to be minimal and easy for small kitchen teams.
-
-## 🚧 Note (May 2025):
-
-The app is temporarily running in Web mode (npx expo start --web) for testing purposes due to Expo Go limitations on iOS 16.7 (iPhone 8). Once development is complete, the target will be switched back to iOS mobile testing.
+---
 
 ## 📄 License
 
-This project is private for now.Feel free to use it as a base for your own kitchen inventory system.
+Private project. Use at your own risk.
 
-✨ Enjoy managing your kitchen inventory smarter and faster!
+## ✅ Tech Stack (Stable)
+
+| Package                     | Version | Notes                              |
+| --------------------------- | ------- | ---------------------------------- |
+| expo                        | 52.x    | SDK 52                             |
+| react-native                | 0.76.x  | Matches SDK 52                     |
+| react                       | 18.2.0  | **Use 18.2.0 (not 18.3.x)**        |
+| react-dom                   | 18.2.0  | Web compatibility                  |
+| expo-router                 | 4.x     | **Use 4.x (5.x requires SDK 53+)** |
+| @react-native-picker/picker | 2.9.x   | Compatible                         |
+
+Keep versions pinned to avoid Web/Native divergence.
+
+---
+
+## 🚀 Quick Start
+
+### 1) API Server (OCR + GPT)
+
+```bash
+cd api-server
+npm i
+# Set envs (see below) and run:
+npx tsx server.ts
+```
+
+Endpoints:
+
+- `POST /ocr` → Google Vision OCR → returns `{ rawText, blocks }`
+- `POST /ocr/gpt-parse` → Batch classify/parse (rules‑first, low‑confidence only GPT) → returns `{ items[], diag }`
+- `GET /ocr/health`
+
+### 2) App (Web dev mode)
+
+```bash
+npm i
+npx expo start --web
+
+# If cache issues (PowerShell):
+Remove-Item -Recurse -Force node_modules
+del package-lock.json
+npm i
+npx expo start --clear
+```
+
+### 3) iOS (when needed)
+
+```bash
+# Install once
+npm i -g eas-cli
+eas build --platform ios
+# Distribute via TestFlight
+```
+
+---
+
+## 🔐 Environment Variables
+
+### api-server
+
+```bash
+# Google Vision credentials
+GOOGLE_APPLICATION_CREDENTIALS=./vision-key.json
+# or set GOOGLE_PROJECT_ID / GOOGLE_CLIENT_EMAIL / GOOGLE_PRIVATE_KEY
+
+# OpenAI (for GPT parsing)
+OPENAI_API_KEY=sk-...
+
+# Optional rate/cost guards
+OCR_MAX_TOKENS_PER_INVOICE=8000
+OCR_MAX_GPT_SEND_RATE=0.3
+```
+
+### app (Supabase)
+
+Create `supabaseClient.ts` with:
+
+```ts
+export const SUPABASE_URL = "https://...";
+export const SUPABASE_ANON_KEY = "...";
+```
+
+---
+
+## 🗂 Project Structure (key paths)
+
+```
+restaurant_inventory/
+├─ app/                     # Screens & routing
+├─ components/              # UI (ParsedItemCard, RegistrationResultList, etc.)
+├─ hooks/                   # useOCRProcessing, useIngredientCategories...
+├─ utils/                   # saveParsedItems, saveTrainingData, OCR utils
+├─ types/                   # TypeScript types (single source of truth)
+├─ api-server/              # Express/TS: /ocr, /ocr/gpt-parse, costGuard
+├─ docs/                    # Design notes (optional)
+├─ supabaseClient.ts        # Supabase client init
+├─ plan.md                  # Roadmap (see Docs)
+└─ README.md                # This file
+```
+
+---
