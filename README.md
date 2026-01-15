@@ -74,7 +74,7 @@ Automatically flags items as Matched (already tracked) or New, ready for review 
 One-click registration with clear results.
 Shows what was successfully saved and provides actions to retry failed items or reset.
 
-![Registration results](screenshots/restaurant-resister-success.png)
+![Registration results](screenshots/restaurant-resister-success2.png)
 
 **4. Prep sheet**
 
