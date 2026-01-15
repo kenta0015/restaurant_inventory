@@ -43,7 +43,7 @@ export default function RegistrationResultList({ results }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>登録結果一覧</Text>
+      <Text style={styles.header}>Registration Results</Text>
       <FlatList
         data={results}
         keyExtractor={(item) => `${item.index}-${item.item.correctedName}`}
