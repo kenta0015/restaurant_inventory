@@ -55,10 +55,33 @@ Flow:
 
 ## Demo (recommended for portfolio)
 
-Add at least one (recruiters look for proof fast):
+1. Inventory + low stock
 
-- 30–60s screen recording (invoice → review → save)
-- 3–5 screenshots (Inventory, Prep Sheet, Parsed Item Review, Result Summary)
+Kitchen Inventory with low-stock alerts and quick editing.
+Search items, organize by category, and update quantities/notes in place.
+
+![Inventory + low stock alert](screenshots/inventory-lowstock.png)
+
+2. Invoice OCR → parsed items
+
+Invoice OCR that extracts line items into structured fields.
+Automatically flags items as Matched (already tracked) or New, ready for review before saving.
+
+![Invoice OCR → parsed items](screenshots/restaurant-OCR.png)
+
+3. Register results
+
+One-click registration with clear results.
+Shows what was successfully saved and provides actions to retry failed items or reset.
+
+![Registration results](screenshots/restaurant-resister-success.png)
+
+4. Prep sheet
+
+Daily prep sheet to plan today’s cooking workload.
+Tracks task completion, remaining time, and suggested prep quantities based on current stock.
+
+![Prep sheet](screenshots/restaurant-prepsheet.png)
 
 ---
 

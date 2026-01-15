@@ -42,10 +42,10 @@ export async function saveParsedItems(items: ParsedItem[]): Promise<{
     const needsReview = unit === '' || price === undefined;
     const existingNote = item.note?.trim() || '';
     const noteWithWarning =
-      needsReview && !existingNote.includes('⚠️ 要確認')
+      needsReview && !existingNote.includes('⚠️ low stock')
         ? existingNote.length > 0
-          ? `${existingNote} ⚠️ 要確認`
-          : '⚠️ 要確認'
+          ? `${existingNote} ⚠️ low stock`
+          : '⚠️ low stock'
         : existingNote || null;
 
     if (!name) {

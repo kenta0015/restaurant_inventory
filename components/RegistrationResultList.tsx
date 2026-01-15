@@ -19,11 +19,11 @@ export default function RegistrationResultList({ results }: Props) {
   const renderStatus = (status: RegistrationResult) => {
     switch (status) {
       case 'success':
-        return '✅ 成功';
+        return '✅ Success';
       case 'skipped':
-        return '⚠ スキップ';
+        return '⚠ skip';
       case 'error':
-        return '❌ エラー';
+        return '❌ error';
       default:
         return '';
     }
