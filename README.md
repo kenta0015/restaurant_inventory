@@ -21,7 +21,7 @@ Most small kitchens track stock informally (memory, notes, spreadsheets). This p
 
 ---
 
-## What I built (engineering highlights)
+## What I built
 
 ### Inventory + prep workflow (mobile app)
 
@@ -53,30 +53,30 @@ Flow:
 
 ---
 
-## Demo (recommended for portfolio)
+## Demo
 
-1. Inventory + low stock
+**1. Inventory + low stock**
 
 Kitchen Inventory with low-stock alerts and quick editing.
 Search items, organize by category, and update quantities/notes in place.
 
 ![Inventory + low stock alert](screenshots/inventory-lowstock.png)
 
-2. Invoice OCR → parsed items
+**2. Invoice OCR → parsed items**
 
 Invoice OCR that extracts line items into structured fields.
 Automatically flags items as Matched (already tracked) or New, ready for review before saving.
 
 ![Invoice OCR → parsed items](screenshots/restaurant-OCR.png)
 
-3. Register results
+**3. Register results**
 
 One-click registration with clear results.
 Shows what was successfully saved and provides actions to retry failed items or reset.
 
 ![Registration results](screenshots/restaurant-resister-success.png)
 
-4. Prep sheet
+**4. Prep sheet**
 
 Daily prep sheet to plan today’s cooking workload.
 Tracks task completion, remaining time, and suggested prep quantities based on current stock.
